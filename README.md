@@ -1,6 +1,8 @@
 # About
 
-The *SMS Backup & Restore* app on [Google Play](https://play.google.com/store/apps/details?id=com.riteshsahu.SMSBackupRestore&hl=en_US) has the option of storing images from MMS messages. I wrote an extremely simple Python script that allows you to easily extract the images out of these backups.
+The *SMS Backup & Restore* app on [Google Play](https://play.google.com/store/apps/details?id=com.riteshsahu.SMSBackupRestore&hl=en_US) (official name: `com.riteshsahu.SMSBackupRestore`) has the option of storing images from MMS messages as part of the backup. I wrote an extremely simple Python script that allows you to easily extract the images out of these backups.
+
+Currently only images are supported (jpg/png/gif).
 
 # Details
 
