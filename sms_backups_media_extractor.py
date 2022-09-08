@@ -20,7 +20,7 @@ def main():
     for filename in os.listdir(argparse_args.input_dir):
         if filename.endswith(".xml") and filename.startswith("sms"):
             parser = lxml.etree.XMLParser(recover=True)
-            root = lxml.etree.parse(os.path.join("input", filename), parser=parser).getroot()
+            root = lxml.etree.parse(os.path.join(argparse_args.input_dir, filename), parser=parser).getroot()
             b64_results_list = []
 
             # '*' technically isn't a valid MIME type but for some reason this application uses it
