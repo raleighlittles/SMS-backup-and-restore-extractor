@@ -1,12 +1,9 @@
-import argparse
 import base64
 import hashlib
 import lxml.etree
 import os
-import pdb
 import random
 import string
-import xml.etree.ElementTree
 
 
 def reconstruct_sms_images(sms_xml_dir, output_images_dir):
@@ -16,7 +13,8 @@ def reconstruct_sms_images(sms_xml_dir, output_images_dir):
     for filename in os.listdir(sms_xml_dir):
         if filename.endswith(".xml") and filename.startswith("sms"):
             parser = lxml.etree.XMLParser(recover=True)
-            root = lxml.etree.parse(os.path.join(sms_xml_dir, filename), parser=parser).getroot()
+            root = lxml.etree.parse(os.path.join(
+                sms_xml_dir, filename), parser=parser).getroot()
             b64_results_list = []
 
             # '*' technically isn't a valid MIME type but for some reason this application uses it
@@ -26,7 +24,8 @@ def reconstruct_sms_images(sms_xml_dir, output_images_dir):
 
             for ext in image_ext_types:
                 xpath_search_expr = xpath_search_str_base + ext + "']"
-                b64_results_list.append([(b.attrib['data'], b.attrib['cl']) for b in root.findall(xpath_search_expr)])
+                b64_results_list.append(
+                    [(b.attrib['data'], b.attrib['cl']) for b in root.findall(xpath_search_expr)])
 
             for result_type in b64_results_list:
                 for (data, cl) in result_type:
@@ -55,5 +54,5 @@ def reconstruct_sms_images(sms_xml_dir, output_images_dir):
         else:
             print("ERROR: Subdirectory found in output directory")
             return 1
-            
+
     print(f"{duplicate_files_count} files removed")

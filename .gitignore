@@ -1,3 +1,7 @@
+**/*.csv
+# don't check your own backups
+**/*.xml
+
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]
