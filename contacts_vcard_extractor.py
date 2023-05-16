@@ -62,9 +62,13 @@ def get_photo_url_or_format(vcard_photo_decl) -> tuple:
     return tuple([extension, url])
 
 
-def extract_images_from_vcf(vcf_files_dir : str, output_images : str) -> None:
+def parse_vcf_files(vcf_files_dir : str, output_images : str) -> None:
+
+    all_contacts = []
 
     for filename in os.listdir(vcf_files_dir):
+
+        contacts_list_from_file = []
 
         print(f"[DEBUG] Parsing {filename}")
 
@@ -79,10 +83,18 @@ def extract_images_from_vcf(vcf_files_dir : str, output_images : str) -> None:
 
             # https://en.wikipedia.org/wiki/VCard#Properties
 
+            current_contact = dict()
+            currently_in_contact = False
+
             for line_num, line_content in enumerate(vcf_file_lines):
-                
-                if line_content.startswith("PHOTO"):
-                    extension, url = get_photo_url_or_format(line_content)
+
+                if (line_content == "BEGIN:VCARD"):
+                    currently_in_contact = True
+
+                elif (line_content == "END:VCARD"):
+                    currently_in_contact = False
+
+            elif (line_content.startswith("N"):
 
                     
 

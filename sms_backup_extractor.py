@@ -3,7 +3,7 @@ import argparse
 # locals
 import call_log_generator
 import mms_images_extractor
-import vcf_image_extractor
+import contacts_vcard_extractor
 
 
 if __name__ == "__main__":
@@ -22,4 +22,4 @@ if __name__ == "__main__":
         call_log_generator.create_call_log(argparse_args.input_dir)
 
     elif (argparse_args.backup_type == "vcf"):
-        vcf_image_extractor.extract_images_from_vcf(argparse_args.input_dir, argparse_args.output_dir)
+        contacts_vcard_extractor.extract_images_from_vcf(argparse_args.input_dir, argparse_args.output_dir)
