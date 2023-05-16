@@ -4,9 +4,10 @@ import lxml.etree
 import os
 import random
 import string
+import typing
 
 
-def reconstruct_sms_images(sms_xml_dir, output_images_dir):
+def reconstruct_sms_images(sms_xml_dir : dir, output_images_dir : str) -> None:
 
     orig_files_count = 0
 

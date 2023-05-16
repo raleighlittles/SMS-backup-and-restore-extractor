@@ -3,7 +3,7 @@ import os
 import xml.etree.ElementTree
 
 
-def get_human_readable_duration(duration_raw_s: str):
+def get_human_readable_duration(duration_raw_s: str) -> str:
     """
     Converts the number of seconds into a formatted and correctly pluralized reading of hours, minutes, and seconds
     e.g "192" --> "3 minutes, 12 seconds"
@@ -36,7 +36,7 @@ def get_human_readable_duration(duration_raw_s: str):
     return formatted_str
 
 
-def create_call_log(calls_xml_dir):
+def create_call_log(calls_xml_dir) -> None:
 
     all_calls_list = []
 
