@@ -4,6 +4,7 @@ import lxml.etree
 import os
 import random
 import string
+import sys
 import typing
 
 
@@ -58,6 +59,6 @@ def reconstruct_sms_images(sms_xml_dir : dir, output_images_dir : str) -> None:
                 duplicate_files_count += 1
         else:
             print("ERROR: Subdirectory found in output directory")
-            return 1
+            sys.exit(1)
 
     print(f"{duplicate_files_count} files removed")
