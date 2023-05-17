@@ -87,6 +87,10 @@ def parse_related_tag(related_line) -> tuple:
 def parse_telephone_tag(telephone_textline) -> tuple:
     return helper_match_generic_label_and_types(telephone_textline)
 
+def parse_multimedia_tag(multimedia_tag_line) -> tuple:
+    """
+    Returns 
+    """
 
 ## Helper methods
 

@@ -32,9 +32,10 @@ def parse_vcard_line(file_line : str) -> dict:
 
         file_line_split = file_line.split(":")
 
-        # Needs to be able to handle multiple colons in the key, in the case of a URL, for example
         key = file_line_split[0]
 
+        # Needs to be able to handle multiple colons in the key, in the case of a URL
+        # ie "AGENT:http://mi6.gov.uk/007" has 3 colons, but we want only 2 groups
         value = "".join(file_line_split[1::])
         contact[key] = value
 
@@ -118,6 +119,9 @@ def parse_vcard_line(file_line : str) -> dict:
     return contact
 
 def get_advanced_key_names() -> typing.List:
+    """
+    Key names that might have multi-line content.
+    """
     return ["KEY", "LOGO", "PHOTO", "SOUND"]
 
 
@@ -134,13 +138,9 @@ def extract_contacts_from_vcf_files(vcf_files_dir : str, output_images : str) ->
         if filename.endswith(".vcf"):
 
             vcf_file_lines = []
-
-            ## TODO: You need to parse the VCF file itself here
             
             with open(os.path.join(vcf_files_dir, filename), 'r') as vcf_file_hndl:
                 vcf_file_lines = vcf_file_hndl.readlines()
-
-            # https://en.wikipedia.org/wiki/VCard#Properties
 
             curr_contact = dict()
             currently_in_contact = False
@@ -167,10 +167,35 @@ def extract_contacts_from_vcf_files(vcf_files_dir : str, output_images : str) ->
                     print(f"[DEBUG] End of Vcard reached! New contact added from file, # of contacts is now {num_contacts_in_file} (Total) {len(all_contacts)}")
 
                 else:
-                    new_contact_info = parse_vcard_line(line_content.strip())
 
-                    if new_contact_info is not None:
-                        curr_contact.update(new_contact_info)
+                    if (any([line_content.startswith(key) for key in get_advanced_key_names()])):
+                        
+                        multimedia_tag_line = line_content.strip()
+                        next_line_num = line_num + 1
+
+                        while (":" not in vcf_file_lines[next_line_num]):
+
+                            multimedia_tag_line += vcf_file_lines[next_line_num].strip()
+
+                            if ((vcf_file_lines[next_line_num]) == ""): # Empty line means done parsing
+                                break
+
+                            next_line_num += 1
+                                
+                        pdb.set_trace()
+
+                        new_contact_info = parse_vcard_line(multimedia_tag_line.strip())
+
+                        line_num = next_line_num
+
+                        continue
+
+
+                    else:
+                        new_contact_info = parse_vcard_line(line_content.strip())
+
+                        if new_contact_info is not None:
+                            curr_contact.update(new_contact_info)
 
                 line_num += 1
         
