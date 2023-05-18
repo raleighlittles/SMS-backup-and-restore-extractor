@@ -120,6 +120,7 @@ def parse_vcard_line(file_line : str) -> dict:
     return contact
 
 def retrieve_multimedia_from_contacts(contacts_list : typing.List):
+    pass
 
 def extract_contacts_from_vcf_files(vcf_files_dir : str, output_images : str) -> None:
 
@@ -161,6 +162,7 @@ def extract_contacts_from_vcf_files(vcf_files_dir : str, output_images : str) ->
                     all_contacts.append(curr_contact)
                     num_contacts_in_file += 1
                     print(f"[DEBUG] End of Vcard reached! New contact added from file, # of contacts is now {num_contacts_in_file} (Total) {len(all_contacts)}")
+                    curr_contact = dict() # Reset
 
                 else:
                     # Check the "advanced" case first, then the simple case
@@ -198,6 +200,7 @@ def extract_contacts_from_vcf_files(vcf_files_dir : str, output_images : str) ->
                 line_num += 1
 
     # You've parsed all VCF files. Now, download any content needed
+    pdb.set_trace()
     retrieve_multimedia_from_contacts(all_contacts)
         
 
