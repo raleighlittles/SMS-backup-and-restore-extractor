@@ -1,4 +1,9 @@
 import typing
+import pdb
+
+TAG_FIELD_SEPARATOR = ";"
+KEY_VALUE_SEPARATOR = ":"
+TYPE_ASSIGNMENT_OR_LABEL_SEPARATOR = "="
 
 def parse_address_tag(address_line) -> tuple:
 
@@ -72,14 +77,22 @@ def parse_name_tag(name_line) -> tuple:
 
     return helper_match_subkey_types_and_values(subname_key_types, name_line_split)
     
-def parse_organization_tag(organzation_line) -> tuple:
+def parse_organization_tag(organization_line) -> tuple:
+    """
+    Parses the ORGANIZATION line. It can either be simple, eg. just one value
+    or have subfields.
+    """
 
-    organzation_line_split = organzation_line.split(";")
+    organzation_line_split = organization_line.split(";")
 
-    # Comes from here https://www.itu.int/ITU-T/formal-language/itu-t/x/x520/2012/SelectedAttributeTypes.html
-    sub_org_key_types = ["organization_name", "collective_organization_name", "organizational_unit_name"]
+    if (len(organzation_line_split) == 1):
+        return organization_line.split(KEY_VALUE_SEPARATOR)[1]
+    
+    else:
+        # Comes from here https://www.itu.int/ITU-T/formal-language/itu-t/x/x520/2012/SelectedAttributeTypes.html
+        sub_org_key_types = ["organization_name", "collective_organization_name", "organizational_unit_name"]
 
-    return helper_match_subkey_types_and_values(sub_org_key_types, organzation_line_split)
+        return helper_match_subkey_types_and_values(sub_org_key_types, organzation_line_split)
 
 def parse_related_tag(related_line) -> tuple:
     return helper_match_generic_label_and_types(related_line)
@@ -89,8 +102,73 @@ def parse_telephone_tag(telephone_textline) -> tuple:
 
 def parse_multimedia_tag(multimedia_tag_line) -> tuple:
     """
-    Returns 
+    Parse the multimedia tag and return all of its available properties
+
+    Multimedia tags have the same 6 different cases:
+
+    <TAG-NAME>;<TAG-TYPE>:<TAG-DATA-URL>                            <-- Case 1
+
+    <TAG-NAME>;<TAG-TYPE>;ENCODING=BASE64:[base64-data]             <-- Case 2
+    <TAG-NAME>;ENCODING=BASE64;<TAG-TYPE>:[base64-data]             <-- Case 2a*
+
+    <TAG-NAME>;TYPE=<TAG-TYPE>:<TAG-DATA-URL>                       <-- Case 3
+
+    <TAG-NAME>;TYPE=<TAG-TYPE>;ENCODING=b:[base64-data]             <-- Case 4
+
+    <TAG-NAME>;MEDIATYPE=<TAG-MIME-TYPE>:<TAG-DATA-URL>             <-- Case 5
+    <TAG-NAME>:data:<TAG-MIME-TYPE>;base64,[base64-data]            <-- Case 6
+
+    *Case 2a isn't actually documented in the wiki as a supported form, but the .vcf file I have uses it
+    for the 'PHOTO' tag, so...
     """
+
+    multimedia_tag_line_split = multimedia_tag_line.split(";")
+
+    tag_type, tag_data, tag_url, tag_mime_type = "", "", "", ""
+
+    if (len(multimedia_tag_line_split) == 3): # Case 2, 2a, or 4
+
+        if (TYPE_ASSIGNMENT_OR_LABEL_SEPARATOR in multimedia_tag_line_split[1]):
+            if (multimedia_tag_line_split[1] == "ENCODING:BASE64"): # Case 2a
+                tag_type, tag_data = multimedia_tag_line_split[2].split(KEY_VALUE_SEPARATOR)
+
+            else: # Case 4
+                tag_type = multimedia_tag_line_split[1].split(TYPE_ASSIGNMENT_OR_LABEL_SEPARATOR)[1]
+                tag_data = multimedia_tag_line_split[2].split(KEY_VALUE_SEPARATOR)[1]
+
+        else: # Case 2
+            tag_type = (multimedia_tag_line_split[2].split(KEY_VALUE_SEPARATOR))[0]
+            tag_data = multimedia_tag_line_split[-1].split(KEY_VALUE_SEPARATOR)[1]
+
+
+    elif (len(multimedia_tag_line_split) == 2): # Case 1, 3, 5, or 6
+
+        if (multimedia_tag_line_split[1].startswith("TYPE")): # Case 3
+
+            multimedia_type_decl_split = multimedia_tag_line_split[1].split(KEY_VALUE_SEPARATOR)
+            tag_type = multimedia_type_decl_split[0].split(TYPE_ASSIGNMENT_OR_LABEL_SEPARATOR)[1]
+            tag_url = multimedia_type_decl_split[1]
+
+        elif (multimedia_tag_line_split[1].startswith("MEDIATYPE")): # Case 5
+            multimedia_mediatype_decl_split = multimedia_tag_line_split[1].split(KEY_VALUE_SEPARATOR)
+            tag_mime_type = multimedia_mediatype_decl_split[0].split(TYPE_ASSIGNMENT_OR_LABEL_SEPARATOR)[1]
+            tag_url = multimedia_mediatype_decl_split[1]
+
+        elif (multimedia_tag_line_split[1].startswith("base64")): # Case 6
+            tag_mime_type = multimedia_tag_line_split[0].split(KEY_VALUE_SEPARATOR)[-1]
+            tag_data = multimedia_tag_line_split[1].split(",")[1]
+
+        else: # Must be case 1
+            tag_type_and_url_split = multimedia_tag_line_split[1].split(KEY_VALUE_SEPARATOR)
+            tag_type = tag_type_and_url_split[0]
+            tag_url = ":".join(tag_type_and_url_split[1:])
+
+    else:
+        raise Exception(f"[ERROR] Can't parse multimedia tag: '{multimedia_tag_line}'")
+    
+    # TODO: See if you can clean this up?
+    return helper_match_subkey_types_and_values(["tag_type", "tag_data", "tag_url", "tag_mime_type"], [tag_type, tag_data, tag_url, tag_mime_type], contains_tag_name=False)
+
 
 ## Helper methods
 
