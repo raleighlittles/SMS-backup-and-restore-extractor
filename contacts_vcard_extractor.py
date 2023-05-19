@@ -17,7 +17,8 @@ import vcard_multimedia_helper
 # However, I've seen some created vCard files that have neither...
 CONTACT_ID_KEY, CONTACT_SECONDARY_ID_KEY = "N", "FN"
 
-def parse_vcard_line(file_line : str) -> dict:
+
+def parse_vcard_line(file_line: str) -> dict:
     """
     Takes the line of a VCF file, and extracts the property and value, returning it
     """
@@ -43,25 +44,28 @@ def parse_vcard_line(file_line : str) -> dict:
         if file_line.startswith("ADR"):
             contact["ADR"] = vcf_field_parser.parse_address_tag(file_line)
 
-
         elif file_line.startswith("CATEGORIES"):
-            contact["CATEGORIES"] = vcf_field_parser.parse_categories_tag(file_line)
+            contact["CATEGORIES"] = vcf_field_parser.parse_categories_tag(
+                file_line)
 
         elif file_line.startswith("CLIENTPIDMAP"):
-            contact["CLIENTPIDMAP"] = vcf_field_parser.parse_clientpidmap_tag(file_line)
+            contact["CLIENTPIDMAP"] = vcf_field_parser.parse_clientpidmap_tag(
+                file_line)
 
         elif file_line.startswith("EMAIL"):
             contact["EMAIL"] = vcf_field_parser.parse_email_tag(file_line)
-        
+
         elif file_line.startswith("GEO"):
             contact["GEO"] = vcf_field_parser.parse_geo_tag(file_line)
 
         elif file_line.startswith("IMPP"):
-            contact["IMPP"] = vcf_field_parser.parse_instant_messenger_handle_tag(file_line)
+            contact["IMPP"] = vcf_field_parser.parse_instant_messenger_handle_tag(
+                file_line)
 
         elif file_line.startswith("LABEL"):
-            contact["LABEL"] = vcf_field_parser.parse_mailing_label_tag(file_line)
-            
+            contact["LABEL"] = vcf_field_parser.parse_mailing_label_tag(
+                file_line)
+
         elif file_line.startswith("MEMBER"):
             contact["MEMBER"] = vcf_field_parser.parse_member_tag(file_line)
 
@@ -90,19 +94,21 @@ def parse_vcard_line(file_line : str) -> dict:
                     # Remove the actual tag name from the string that gets sent for parsing
                     # tag_info_field_1, tag_info_field_2 = vcf_field_parser.parse_multimedia_tag(file_line[len(key):])
                     # contact[key] = dict({tag_info_field_1, tag_info_field_2})
-                    contact[key] = vcf_field_parser.parse_multimedia_tag(file_line[len(key):])
-            
+                    contact[key] = vcf_field_parser.parse_multimedia_tag(
+                        file_line[len(key):])
+
     return contact
 
 
-def generate_multimedia_of_contact(contact : dict, output_dir : str):
+def generate_multimedia_of_contact(contact: dict, output_dir: str):
 
     # The generated media needs something in the filename that is unique and identifiable to the user
 
     unique_contact_field = ""
 
     if CONTACT_ID_KEY in contact:
-        unique_contact_field = vcf_field_parser.return_name_tag_formatted(contact[CONTACT_ID_KEY])
+        unique_contact_field = vcf_field_parser.return_name_tag_formatted(
+            contact[CONTACT_ID_KEY])
 
     elif CONTACT_SECONDARY_ID_KEY in contact:
         unique_contact_field = contact[CONTACT_SECONDARY_ID_KEY]
@@ -110,14 +116,15 @@ def generate_multimedia_of_contact(contact : dict, output_dir : str):
     else:
         # This should never happen (it violates the specification), yet a few of my Dad's VCF files somehow have contacts with no name field
         unique_contact_field = "".join(random.sample(string.ascii_letters, 10))
-        
+
     # A unique prefix to the filename so that there's no conflicts
     base_filename = unique_contact_field
 
-    vcard_multimedia_helper.extract_key_multimedia(contact, os.path.join(output_dir, base_filename))
+    vcard_multimedia_helper.extract_key_multimedia(
+        contact, os.path.join(output_dir, base_filename))
 
 
-def parse_contacts_from_vcf_files(vcf_files_dir : str, output_media_dir : str) -> None:
+def parse_contacts_from_vcf_files(vcf_files_dir: str, output_media_dir: str) -> None:
 
     all_contacts = []
 
@@ -130,7 +137,7 @@ def parse_contacts_from_vcf_files(vcf_files_dir : str, output_media_dir : str) -
         if filename.endswith(".vcf"):
 
             vcf_file_lines = []
-            
+
             with open(os.path.join(vcf_files_dir, filename), 'r') as vcf_file_hndl:
                 vcf_file_lines = vcf_file_hndl.readlines()
 
@@ -140,7 +147,7 @@ def parse_contacts_from_vcf_files(vcf_files_dir : str, output_media_dir : str) -
 
             line_num = 0
 
-            #for line_num, line_content in enumerate(vcf_file_lines):
+            # for line_num, line_content in enumerate(vcf_file_lines):
             while line_num < len(vcf_file_lines):
 
                 line_content = vcf_file_lines[line_num]
@@ -157,10 +164,12 @@ def parse_contacts_from_vcf_files(vcf_files_dir : str, output_media_dir : str) -
                     currently_in_contact = False
                     all_contacts.append(curr_contact)
                     num_contacts_in_file += 1
-                    print(f"[DEBUG] End of Vcard reached! New contact added from file, # of contacts is now {num_contacts_in_file} (Total) {len(all_contacts)}")
+                    print(
+                        f"[DEBUG] End of Vcard reached! New contact added from file, # of contacts is now {num_contacts_in_file} (Total) {len(all_contacts)}")
                     if has_multimedia:
-                        generate_multimedia_of_contact(curr_contact, output_media_dir)
-                    
+                        generate_multimedia_of_contact(
+                            curr_contact, output_media_dir)
+
                     # Reset things for the next contact
                     has_multimedia = False
                     curr_contact = dict()
@@ -177,27 +186,31 @@ def parse_contacts_from_vcf_files(vcf_files_dir : str, output_media_dir : str) -
 
                         while (":" not in vcf_file_lines[next_line_num]):
 
-                            multimedia_tag_line += vcf_file_lines[next_line_num].strip()
+                            multimedia_tag_line += vcf_file_lines[next_line_num].strip(
+                            )
 
-                            if ((vcf_file_lines[next_line_num]) == ""): # Empty line means done parsing
+                            # Empty line means done parsing
+                            if ((vcf_file_lines[next_line_num]) == ""):
                                 break
 
                             next_line_num += 1
 
-
-                        new_contact_info = parse_vcard_line(multimedia_tag_line.strip())
+                        new_contact_info = parse_vcard_line(
+                            multimedia_tag_line.strip())
                         curr_contact.update(new_contact_info)
                         line_num = next_line_num
 
                         continue
 
                     else:
-                        new_contact_info = parse_vcard_line(line_content.strip())
+                        new_contact_info = parse_vcard_line(
+                            line_content.strip())
 
                         if new_contact_info is not None:
                             curr_contact.update(new_contact_info)
                         else:
-                            raise Exception(f"[ERROR] Couldn't parse file line #{line_num} : '{line_content}")
+                            raise Exception(
+                                f"[ERROR] Couldn't parse file line #{line_num} : '{line_content}")
 
                 # Always increment!
                 line_num += 1

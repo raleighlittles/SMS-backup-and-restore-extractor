@@ -8,7 +8,7 @@ import sys
 import typing
 
 
-def reconstruct_sms_images(sms_xml_dir : dir, output_images_dir : str) -> None:
+def reconstruct_sms_images(sms_xml_dir: dir, output_images_dir: str) -> None:
 
     orig_files_count = 0
 
@@ -21,7 +21,8 @@ def reconstruct_sms_images(sms_xml_dir : dir, output_images_dir : str) -> None:
 
             # '*' technically isn't a valid MIME type but for some reason this application uses it
             # https://www.iana.org/assignments/media-types/media-types.xhtml#image
-            image_ext_types = ["avif", "bmp", "gif", "heic", "heif", "jpeg", "tiff", "png", "webp", "*"]
+            image_ext_types = ["avif", "bmp", "gif", "heic",
+                               "heif", "jpeg", "tiff", "png", "webp", "*"]
             xpath_search_str_base = ".//part[@ct='image/"
 
             for ext in image_ext_types:
@@ -34,10 +35,12 @@ def reconstruct_sms_images(sms_xml_dir : dir, output_images_dir : str) -> None:
                 for (data, content_location, ext) in result_type:
                     # If it's empty, just assign it a random 10-letter string (so that it doesn't conflict with other unnamed files)
                     if content_location == "" or content_location == "null":
-                        content_location = "".join(random.sample(string.ascii_letters, 10)) + "." + ext
+                        content_location = "".join(random.sample(
+                            string.ascii_letters, 10)) + "." + ext
 
                     # this ensures the filename has an extension, if it doesn't (likely) have one
-                    output_filename = (content_location if '.' in content_location else (content_location + "." + ext))
+                    output_filename = (content_location if '.' in content_location else (
+                        content_location + "." + ext))
                     with open(os.path.join(output_images_dir, output_filename), 'wb') as f:
                         f.write(base64.b64decode(data))
                         orig_files_count += 1
