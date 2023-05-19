@@ -5,6 +5,8 @@ TAG_FIELD_SEPARATOR = ";"
 KEY_VALUE_SEPARATOR = ":"
 TYPE_ASSIGNMENT_OR_LABEL_SEPARATOR = "="
 
+import vcard_multimedia_helper
+
 def parse_address_tag(address_line) -> tuple:
 
     # Split the string on semi-colons, then iterate backwards until you reach an empty string,
@@ -76,6 +78,15 @@ def parse_name_tag(name_line) -> tuple:
     #return tuple([subname for subname in zip(subname_key_types, name_line_split) if subname[1] != ""])
 
     return helper_match_subkey_types_and_values(subname_key_types, name_line_split)
+
+def return_name_tag_formatted(name_tag_field : tuple) -> str:
+
+    name = ""
+
+    for (tag_label, tag_value) in name_tag_field:
+        name += tag_value
+
+    return name
     
 def parse_organization_tag(organization_line) -> tuple:
     """
@@ -129,7 +140,7 @@ def parse_multimedia_tag(multimedia_tag_line) -> tuple:
     if (len(multimedia_tag_line_split) == 3): # Case 2, 2a, or 4
 
         if (TYPE_ASSIGNMENT_OR_LABEL_SEPARATOR in multimedia_tag_line_split[1]):
-            if (multimedia_tag_line_split[1] == "ENCODING:BASE64"): # Case 2a
+            if (multimedia_tag_line_split[1] == "ENCODING=BASE64"): # Case 2a
                 tag_type, tag_data = multimedia_tag_line_split[2].split(KEY_VALUE_SEPARATOR)
 
             else: # Case 4
@@ -139,7 +150,6 @@ def parse_multimedia_tag(multimedia_tag_line) -> tuple:
         else: # Case 2
             tag_type = (multimedia_tag_line_split[2].split(KEY_VALUE_SEPARATOR))[0]
             tag_data = multimedia_tag_line_split[-1].split(KEY_VALUE_SEPARATOR)[1]
-
 
     elif (len(multimedia_tag_line_split) == 2): # Case 1, 3, 5, or 6
 
@@ -166,8 +176,7 @@ def parse_multimedia_tag(multimedia_tag_line) -> tuple:
     else:
         raise Exception(f"[ERROR] Can't parse multimedia tag: '{multimedia_tag_line}'")
     
-    # TODO: See if you can clean this up?
-    return helper_match_subkey_types_and_values(["tag_type", "tag_data", "tag_url", "tag_mime_type"], [tag_type, tag_data, tag_url, tag_mime_type], contains_tag_name=False)
+    return helper_match_subkey_types_and_values(vcard_multimedia_helper.get_multimedia_tag_list(), [tag_type, tag_data, tag_url, tag_mime_type], contains_tag_name=False)
 
 
 ## Helper methods

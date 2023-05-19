@@ -22,4 +22,4 @@ if __name__ == "__main__":
         call_log_generator.create_call_log(argparse_args.input_dir)
 
     elif (argparse_args.backup_type == "vcf"):
-        contacts_vcard_extractor.extract_contacts_from_vcf_files(argparse_args.input_dir, argparse_args.output_dir)
+        contacts_vcard_extractor.parse_contacts_from_vcf_files(argparse_args.input_dir, argparse_args.output_dir)

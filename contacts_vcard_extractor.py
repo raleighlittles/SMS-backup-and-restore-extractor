@@ -4,17 +4,27 @@ import pdb
 import sys
 import requests
 import os
+import string
+import random
 import typing
 
 # local
 import vcf_field_parser
+import vcard_multimedia_helper
 
 
-def get_advanced_key_names() -> typing.List:
-    """
-    Key names that might have multi-line content.
-    """
-    return ["KEY", "LOGO", "PHOTO", "SOUND"]
+# These are properties that are declared with just a simple key-value pair, and no additional processing, like so:
+# ANNIVERSARY:19901021
+# FN:Dr. John Doe
+# GENDER:F
+SIMPLE_KEYS = ["AGENT", "ANNIVERSARY", "BDAY", "CALADRURI", "CALURI", "CLASS", "FBURL", "FN", "GENDER", "KIND", "LANG", "MAILER", "NICKNAME", "NOTE", "PRODID", "PROFILE", "REV", "ROLE", "SORT-STRING", "SOURCE", "TITLE", "TZ", "URL", "VERSION", "XML"]
+
+# These are keys that require some processing
+INTERMEDIATE_KEYS = ["ADR", "CATEGORIES", "CLIENTPIDMAP", "EMAIL", "GEO", "IMPP", "LABEL", "MEMBER", "N", "ORG", "RELATED", "TEL", "UID"]
+
+# v2.1 and v3.0 require the first, v4.0 requires the second.
+# However, I've seen some created vCard files that have neither...
+CONTACT_ID_KEY, CONTACT_SECONDARY_ID_KEY = "N", "FN"
 
 def parse_vcard_line(file_line : str) -> dict:
     """
@@ -27,12 +37,12 @@ def parse_vcard_line(file_line : str) -> dict:
     # ANNIVERSARY:19901021
     # FN:Dr. John Doe
     # GENDER:F
-    simple_keys = ["AGENT", "ANNIVERSARY", "BDAY", "CALADRURI", "CALURI", "CLASS", "FBURL", "FN", "GENDER", "KIND", "LANG", "MAILER", "NICKNAME", "NOTE", "PRODID", "PROFILE", "REV", "ROLE", "SORT-STRING", "SOURCE", "TITLE", "TZ", "URL", "VERSION", "XML"]
+    # simple_keys = ["AGENT", "ANNIVERSARY", "BDAY", "CALADRURI", "CALURI", "CLASS", "FBURL", "FN", "GENDER", "KIND", "LANG", "MAILER", "NICKNAME", "NOTE", "PRODID", "PROFILE", "REV", "ROLE", "SORT-STRING", "SOURCE", "TITLE", "TZ", "URL", "VERSION", "XML"]
 
     contact = dict()
 
     # This only works because none of the 'simple' key names is a substring of any other key name
-    if any([file_line.startswith(key) for key in simple_keys]):
+    if any([file_line.startswith(key) for key in SIMPLE_KEYS]):
 
         file_line_split = file_line.split(":")
 
@@ -47,7 +57,7 @@ def parse_vcard_line(file_line : str) -> dict:
     else:
         if file_line.startswith("ADR"):
             addr_type, address = vcf_field_parser.parse_address_tag(file_line)
-            contact["ADR"] = {addr_type : address}
+            contact["ADR"] = dict({addr_type : address})
 
         elif file_line.startswith("CATEGORIES"):
             # Split the following:
@@ -59,29 +69,29 @@ def parse_vcard_line(file_line : str) -> dict:
 
         elif file_line.startswith("CLIENTPIDMAP"):
             pid_source_id, urn = vcf_field_parser.parse_clientpidmap_tag(file_line)
-            contact["CLIENTPIDMAP"] = {pid_source_id : urn}
+            contact["CLIENTPIDMAP"] = dict({pid_source_id : urn})
 
         elif file_line.startswith("EMAIL"):
             email_type, email_address = vcf_field_parser.parse_email_tag(file_line)
-            contact["EMAIL"] = { email_type : email_address }
+            contact["EMAIL"] = dict({ email_type : email_address })
         
         elif file_line.startswith("GEO"):
             specifier_1, coordinate_1, specifier_2, coordinate_2 = vcf_field_parser.parse_geo_tag(file_line)
-            contact["GEO"] = {specifier_1 : coordinate_1, specifier_2: coordinate_2}
+            contact["GEO"] = dict({specifier_1 : coordinate_1, specifier_2: coordinate_2})
 
         elif file_line.startswith("IMPP"):
             key, impp_type, impp_handle = file_line.split(":")
-            contact[key] = {impp_type : impp_handle}
+            contact[key] = dict({impp_type : impp_handle})
 
         elif file_line.startswith("LABEL"):
             label_type, label_data = vcf_field_parser.parse_mailing_label_tag(file_line)
-            contact["LABEL"] = { label_type : label_data }
+            contact["LABEL"] = dict({ label_type : label_data })
             
         elif file_line.startswith("MEMBER"):
             file_line_split = file_line.split(":")
             key, member_id_type = file_line_split[0], file_line_split[1]
             member_id_value = ":".join(file_line_split[2:])
-            contact[key] = { member_id_type : member_id_value }
+            contact[key] = dict({ member_id_type : member_id_value })
 
         elif file_line.startswith("N"):
             name_fields = vcf_field_parser.parse_name_tag(file_line)
@@ -93,21 +103,21 @@ def parse_vcard_line(file_line : str) -> dict:
 
         elif file_line.startswith("RELATED"):
             related_type, related_data = vcf_field_parser.parse_related_tag(file_line)
-            contact["RELATED"] = { related_type : related_data }
+            contact["RELATED"] = dict({ related_type : related_data })
 
         elif file_line.startswith("TEL"):
             telephone_type, telephone_number = vcf_field_parser.parse_telephone_tag(file_line)
-            contact["TEL"] = { telephone_type : telephone_number }
+            contact["TEL"] = dict({ telephone_type : telephone_number })
 
         elif file_line.startswith("UID"):
             uid_line_split = file_line.split(":")
             uid_type = uid_line_split[1]
             uid_data = ":".join(uid_line_split[2:])
-            contact[uid_line_split[0]] = { uid_type : uid_data }
+            contact[uid_line_split[0]] = dict({uid_type : uid_data })
 
         # The advanced key types
         else:
-            multimedia_keys = get_advanced_key_names()
+            multimedia_keys = vcard_multimedia_helper.get_advanced_key_names()
 
             for key in multimedia_keys:
 
@@ -115,14 +125,34 @@ def parse_vcard_line(file_line : str) -> dict:
                     # Remove the actual tag name from the string that gets sent for parsing
                     tag_info_field_1, tag_info_field_2 = vcf_field_parser.parse_multimedia_tag(file_line[len(key):])
 
-                    contact[key] = {tag_info_field_1, tag_info_field_2}
+                    contact[key] = dict({tag_info_field_1, tag_info_field_2})
             
     return contact
 
-def retrieve_multimedia_from_contacts(contacts_list : typing.List):
-    pass
 
-def extract_contacts_from_vcf_files(vcf_files_dir : str, output_images : str) -> None:
+def generate_multimedia_of_contact(contact : dict, output_dir : str):
+
+    # The generated media needs something in the filename that is unique and identifiable to the user
+
+    unique_contact_field = ""
+
+    if CONTACT_ID_KEY in contact:
+        unique_contact_field = vcf_field_parser.return_name_tag_formatted(contact[CONTACT_ID_KEY])
+
+    elif CONTACT_SECONDARY_ID_KEY in contact:
+        unique_contact_field = contact[CONTACT_SECONDARY_ID_KEY]
+
+    else:
+        # This should never happen (it violates the specification), yet a few of my Dad's VCF files somehow have contacts with no name field
+        unique_contact_field = "".join(random.sample(string.ascii_letters, 10))
+        
+    # A unique prefix to the filename so that there's no conflicts
+    base_filename = unique_contact_field
+
+    vcard_multimedia_helper.extract_key_multimedia(contact, os.path.join(output_dir, base_filename))
+
+
+def parse_contacts_from_vcf_files(vcf_files_dir : str, output_media_dir : str) -> None:
 
     all_contacts = []
 
@@ -141,6 +171,7 @@ def extract_contacts_from_vcf_files(vcf_files_dir : str, output_images : str) ->
 
             curr_contact = dict()
             currently_in_contact = False
+            has_multimedia = False
 
             line_num = 0
 
@@ -162,13 +193,19 @@ def extract_contacts_from_vcf_files(vcf_files_dir : str, output_images : str) ->
                     all_contacts.append(curr_contact)
                     num_contacts_in_file += 1
                     print(f"[DEBUG] End of Vcard reached! New contact added from file, # of contacts is now {num_contacts_in_file} (Total) {len(all_contacts)}")
-                    curr_contact = dict() # Reset
+                    if has_multimedia:
+                        generate_multimedia_of_contact(curr_contact, output_media_dir)
+                    
+                    # Reset things for the next contact
+                    has_multimedia = False
+                    curr_contact = dict()
 
                 else:
+                    # TODO: I'd ideally, like NOT to have to rearrange the input file just to make parsing easier...
                     # Check the "advanced" case first, then the simple case
+                    if (any([line_content.startswith(key) for key in vcard_multimedia_helper.get_advanced_key_names()])):
 
-
-                    if (any([line_content.startswith(key) for key in get_advanced_key_names()])):
+                        has_multimedia = True
 
                         multimedia_tag_line = line_content.strip()
                         next_line_num = line_num + 1
@@ -184,9 +221,10 @@ def extract_contacts_from_vcf_files(vcf_files_dir : str, output_images : str) ->
 
 
                         new_contact_info = parse_vcard_line(multimedia_tag_line.strip())
+                        curr_contact.update(new_contact_info)
                         line_num = next_line_num
-                        continue
 
+                        continue
 
                     else:
                         new_contact_info = parse_vcard_line(line_content.strip())
@@ -198,16 +236,3 @@ def extract_contacts_from_vcf_files(vcf_files_dir : str, output_images : str) ->
 
                 # Always increment!
                 line_num += 1
-
-    # You've parsed all VCF files. Now, download any content needed
-    pdb.set_trace()
-    retrieve_multimedia_from_contacts(all_contacts)
-        
-
-
-
-                    
-
-
-
-
