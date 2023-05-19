@@ -38,8 +38,8 @@ def extract_key_multimedia(contact : dict, base_filename : str) -> str:
                 else:
                     raise Exception(f"Couldn't determine extension, contents of {key_name} didn't match expected format")
                 
-            
-            filename = (base_filename) + "." + file_extension
+            # Remove any extra dots from the filename. Some scripts assume anything after the dot is the file extension
+            filename = (base_filename.replace(".", "")) + "." + file_extension
 
             isUrl = (MULTIMEDIA_TAG_TAG_URL_KEY in contact[key_name])
                 

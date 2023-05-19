@@ -13,15 +13,6 @@ import vcf_field_parser
 import vcard_multimedia_helper
 
 
-# These are properties that are declared with just a simple key-value pair, and no additional processing, like so:
-# ANNIVERSARY:19901021
-# FN:Dr. John Doe
-# GENDER:F
-SIMPLE_KEYS = ["AGENT", "ANNIVERSARY", "BDAY", "CALADRURI", "CALURI", "CLASS", "FBURL", "FN", "GENDER", "KIND", "LANG", "MAILER", "NICKNAME", "NOTE", "PRODID", "PROFILE", "REV", "ROLE", "SORT-STRING", "SOURCE", "TITLE", "TZ", "URL", "VERSION", "XML"]
-
-# These are keys that require some processing
-INTERMEDIATE_KEYS = ["ADR", "CATEGORIES", "CLIENTPIDMAP", "EMAIL", "GEO", "IMPP", "LABEL", "MEMBER", "N", "ORG", "RELATED", "TEL", "UID"]
-
 # v2.1 and v3.0 require the first, v4.0 requires the second.
 # However, I've seen some created vCard files that have neither...
 CONTACT_ID_KEY, CONTACT_SECONDARY_ID_KEY = "N", "FN"
@@ -33,16 +24,10 @@ def parse_vcard_line(file_line : str) -> dict:
 
     print(f"[DEBUG] Parsing line | {file_line}")
 
-    # These are properties that are declared with just a simple key-value pair, and no additional processing, like so:
-    # ANNIVERSARY:19901021
-    # FN:Dr. John Doe
-    # GENDER:F
-    # simple_keys = ["AGENT", "ANNIVERSARY", "BDAY", "CALADRURI", "CALURI", "CLASS", "FBURL", "FN", "GENDER", "KIND", "LANG", "MAILER", "NICKNAME", "NOTE", "PRODID", "PROFILE", "REV", "ROLE", "SORT-STRING", "SOURCE", "TITLE", "TZ", "URL", "VERSION", "XML"]
-
     contact = dict()
 
     # This only works because none of the 'simple' key names is a substring of any other key name
-    if any([file_line.startswith(key) for key in SIMPLE_KEYS]):
+    if any([file_line.startswith(key) for key in vcf_field_parser.SIMPLE_KEYS]):
 
         file_line_split = file_line.split(":")
 
@@ -56,64 +41,44 @@ def parse_vcard_line(file_line : str) -> dict:
     # With the simple keys out of the way, parse the remaining keys
     else:
         if file_line.startswith("ADR"):
-            addr_type, address = vcf_field_parser.parse_address_tag(file_line)
-            contact["ADR"] = dict({addr_type : address})
+            contact["ADR"] = vcf_field_parser.parse_address_tag(file_line)
+
 
         elif file_line.startswith("CATEGORIES"):
-            # Split the following:
-            # CATEGORIES:swimmer,biker
-            # into
-            # ["biker", "swimmer"]
-            user_categories : typing.List = sorted(("".join(file_line.split(":")[1::])).split(","))
-            contact["CATEGORIES"] = user_categories
+            contact["CATEGORIES"] = vcf_field_parser.parse_categories_tag(file_line)
 
         elif file_line.startswith("CLIENTPIDMAP"):
-            pid_source_id, urn = vcf_field_parser.parse_clientpidmap_tag(file_line)
-            contact["CLIENTPIDMAP"] = dict({pid_source_id : urn})
+            contact["CLIENTPIDMAP"] = vcf_field_parser.parse_clientpidmap_tag(file_line)
 
         elif file_line.startswith("EMAIL"):
-            email_type, email_address = vcf_field_parser.parse_email_tag(file_line)
-            contact["EMAIL"] = dict({ email_type : email_address })
+            contact["EMAIL"] = vcf_field_parser.parse_email_tag(file_line)
         
         elif file_line.startswith("GEO"):
-            specifier_1, coordinate_1, specifier_2, coordinate_2 = vcf_field_parser.parse_geo_tag(file_line)
-            contact["GEO"] = dict({specifier_1 : coordinate_1, specifier_2: coordinate_2})
+            contact["GEO"] = vcf_field_parser.parse_geo_tag(file_line)
 
         elif file_line.startswith("IMPP"):
-            key, impp_type, impp_handle = file_line.split(":")
-            contact[key] = dict({impp_type : impp_handle})
+            contact["IMPP"] = vcf_field_parser.parse_instant_messenger_handle_tag(file_line)
 
         elif file_line.startswith("LABEL"):
-            label_type, label_data = vcf_field_parser.parse_mailing_label_tag(file_line)
-            contact["LABEL"] = dict({ label_type : label_data })
+            contact["LABEL"] = vcf_field_parser.parse_mailing_label_tag(file_line)
             
         elif file_line.startswith("MEMBER"):
-            file_line_split = file_line.split(":")
-            key, member_id_type = file_line_split[0], file_line_split[1]
-            member_id_value = ":".join(file_line_split[2:])
-            contact[key] = dict({ member_id_type : member_id_value })
+            contact["MEMBER"] = vcf_field_parser.parse_member_tag(file_line)
 
         elif file_line.startswith("N"):
-            name_fields = vcf_field_parser.parse_name_tag(file_line)
-            contact["N"] = name_fields
+            contact["N"] = vcf_field_parser.parse_name_tag(file_line)
 
         elif file_line.startswith("ORG"):
-            org_fields = vcf_field_parser.parse_organization_tag(file_line)
-            contact["ORG"] = org_fields
+            contact["ORG"] = vcf_field_parser.parse_organization_tag(file_line)
 
         elif file_line.startswith("RELATED"):
-            related_type, related_data = vcf_field_parser.parse_related_tag(file_line)
-            contact["RELATED"] = dict({ related_type : related_data })
+            contact["RELATED"] = vcf_field_parser.parse_related_tag(file_line)
 
         elif file_line.startswith("TEL"):
-            telephone_type, telephone_number = vcf_field_parser.parse_telephone_tag(file_line)
-            contact["TEL"] = dict({ telephone_type : telephone_number })
+            contact["TEL"] = vcf_field_parser.parse_telephone_tag(file_line)
 
         elif file_line.startswith("UID"):
-            uid_line_split = file_line.split(":")
-            uid_type = uid_line_split[1]
-            uid_data = ":".join(uid_line_split[2:])
-            contact[uid_line_split[0]] = dict({uid_type : uid_data })
+            contact["UID"] = vcf_field_parser.parse_uuid_tag(file_line)
 
         # The advanced key types
         else:
@@ -123,9 +88,9 @@ def parse_vcard_line(file_line : str) -> dict:
 
                 if file_line.startswith(key):
                     # Remove the actual tag name from the string that gets sent for parsing
-                    tag_info_field_1, tag_info_field_2 = vcf_field_parser.parse_multimedia_tag(file_line[len(key):])
-
-                    contact[key] = dict({tag_info_field_1, tag_info_field_2})
+                    # tag_info_field_1, tag_info_field_2 = vcf_field_parser.parse_multimedia_tag(file_line[len(key):])
+                    # contact[key] = dict({tag_info_field_1, tag_info_field_2})
+                    contact[key] = vcf_field_parser.parse_multimedia_tag(file_line[len(key):])
             
     return contact
 
