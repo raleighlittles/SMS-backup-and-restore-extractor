@@ -1,0 +1,42 @@
+BEGIN:VCARD
+VERSION:4.0
+FN:Simon Perreault
+N:Perreault;Simon;;;ing. jr,M.Sc.
+BDAY:010203
+GENDER:M
+EMAIL;TYPE=work:simon.perreault@viagenie.ca
+ADR;TYPE=home:;;123 Main St.;Springfield;IL;12345;USA
+AGENT:http://mi6.gov.uk/007
+ANNIVERSARY:19901021
+CALADRURI:http://example.com/calendar/jdoe
+CALURI:http://example.com/calendar/jdoe
+CATEGORIES:swimmer,biker
+CLASS:public
+CLIENTPIDMAP:1;urn:uuid:3df403f4-5924-4bb7-b077-3c711d9eb34b
+FBURL:http://example.com/fb/jdoe
+IMPP:aim:johndoe@aol.com
+KEY;PGP:http://example.com/key.pgp
+KIND:individual
+LABEL;TYPE=HOME:123 Main St.\nSpringfield, IL 12345\nUSA
+LANG:fr-CA
+LOGO;PNG:http://example.com/logo.png
+MAILER:Thunderbird
+MEMBER:urn:uuid:03a0e51f-d1aa-4385-8a53-e29025acd8af
+NICKNAME:Jon,Johnny
+NOTE:I am proficient in Tiger-Crane Style,\nand I am more than proficient in the exquisite art of the Samurai sword.
+ORG:Google;GMail Team;Spam Detection Squad
+PHOTO;JPEG:http://example.com/photo.jpg
+PRODID:-//ONLINE DIRECTORY//NONSGML Version 1//EN
+RELATED;TYPE=friend:urn:uuid:03a0e51f-d1aa-4385-8a53-e29025acd8af
+REV:20121201T134211Z
+ROLE:Executive
+SORT-STRING:Doe
+SOUND;OGG:http://example.com/sound.ogg
+SOURCE:http://johndoe.com/vcard.vcf
+TEL;TYPE=cell:(123) 555-5832
+TITLE:V.P. Research and Development
+TZ:-0500
+UID:urn:uuid:da418720-3754-4631-a169-db89a02b831b
+URL:http://www.johndoe.com
+XML:<b>Not an xCard XML element</b>
+END:VCARD

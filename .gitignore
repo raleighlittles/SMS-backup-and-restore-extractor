@@ -1,6 +1,7 @@
 **/*.csv
 # don't check your own backups
 **/*.xml
+**/*.vcf
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
