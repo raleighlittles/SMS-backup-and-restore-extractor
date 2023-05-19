@@ -1,12 +1,8 @@
 import base64
 import os
-import pdb
-import sys
-import requests
-import os
-import string
 import random
-import typing
+import string
+import sys
 
 # local
 import vcf_field_parser
@@ -29,15 +25,7 @@ def parse_vcard_line(file_line: str) -> dict:
 
     # This only works because none of the 'simple' key names is a substring of any other key name
     if any([file_line.startswith(key) for key in vcf_field_parser.SIMPLE_KEYS]):
-
-        file_line_split = file_line.split(":")
-
-        key = file_line_split[0]
-
-        # NOTE-1: Needs to be able to handle multiple colons in the key, in the case of a URL
-        # ie "AGENT:http://mi6.gov.uk/007" has 3 colons, but we want only 2 groups
-        value = "".join(file_line_split[1::])
-        contact[key] = value
+        contact[key] = vcf_field_parser.parse_simple_tag(file_line)
 
     # With the simple keys out of the way, parse the remaining keys
     else:
@@ -92,8 +80,6 @@ def parse_vcard_line(file_line: str) -> dict:
 
                 if file_line.startswith(key):
                     # Remove the actual tag name from the string that gets sent for parsing
-                    # tag_info_field_1, tag_info_field_2 = vcf_field_parser.parse_multimedia_tag(file_line[len(key):])
-                    # contact[key] = dict({tag_info_field_1, tag_info_field_2})
                     contact[key] = vcf_field_parser.parse_multimedia_tag(
                         file_line[len(key):])
 
@@ -103,7 +89,6 @@ def parse_vcard_line(file_line: str) -> dict:
 def generate_multimedia_of_contact(contact: dict, output_dir: str):
 
     # The generated media needs something in the filename that is unique and identifiable to the user
-
     unique_contact_field = ""
 
     if CONTACT_ID_KEY in contact:
@@ -114,10 +99,10 @@ def generate_multimedia_of_contact(contact: dict, output_dir: str):
         unique_contact_field = contact[CONTACT_SECONDARY_ID_KEY]
 
     else:
-        # This should never happen (it violates the specification), yet a few of my Dad's VCF files somehow have contacts with no name field
+        # This code should never have to run (it violates the specification), 
+        # yet a few of my Dad's VCF files somehow have contacts with no name field
         unique_contact_field = "".join(random.sample(string.ascii_letters, 10))
 
-    # A unique prefix to the filename so that there's no conflicts
     base_filename = unique_contact_field
 
     vcard_multimedia_helper.extract_key_multimedia(
@@ -147,7 +132,6 @@ def parse_contacts_from_vcf_files(vcf_files_dir: str, output_media_dir: str) -> 
 
             line_num = 0
 
-            # for line_num, line_content in enumerate(vcf_file_lines):
             while line_num < len(vcf_file_lines):
 
                 line_content = vcf_file_lines[line_num]

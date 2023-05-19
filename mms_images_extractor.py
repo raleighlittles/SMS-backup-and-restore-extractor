@@ -5,7 +5,6 @@ import os
 import random
 import string
 import sys
-import typing
 
 
 def reconstruct_sms_images(sms_xml_dir: dir, output_images_dir: str) -> None:

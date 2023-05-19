@@ -1,8 +1,6 @@
 import typing
-import pdb
 
 # locals
-
 import vcard_multimedia_helper
 
 TAG_FIELD_SEPARATOR = ";"
@@ -14,6 +12,14 @@ TYPE_ASSIGNMENT_OR_LABEL_SEPARATOR = "="
 # FN:Dr. John Doe
 # GENDER:F
 SIMPLE_KEYS = ["AGENT", "ANNIVERSARY", "BDAY", "CALADRURI", "CALURI", "CLASS", "FBURL", "FN", "GENDER", "KIND", "LANG", "MAILER", "NICKNAME", "NOTE", "PRODID", "PROFILE", "REV", "ROLE", "SORT-STRING", "SOURCE", "TITLE", "TZ", "URL", "VERSION", "XML"]
+
+def parse_simple_tag(file_line) -> str:
+
+    # NOTE-1: Needs to be able to handle multiple colons in the key, in the case of a URL
+    # ie "AGENT:http://mi6.gov.uk/007" has 3 colons, but we want only 2 groups
+
+    return "".join(file_line.split(KEY_VALUE_SEPARATOR)[1::])
+
 
 def parse_address_tag(address_line) -> dict:
 
@@ -54,6 +60,7 @@ def parse_categories_tag(category_line) -> tuple:
     """
     return sorted(("".join(category_line.split(KEY_VALUE_SEPARATOR)[1::])).split(","))
 
+
 def parse_clientpidmap_tag(clientpidmap_line) -> dict:
     
     clientpidmap_split = clientpidmap_line.split(TAG_FIELD_SEPARATOR)
@@ -62,8 +69,10 @@ def parse_clientpidmap_tag(clientpidmap_line) -> dict:
 
     return dict({pid_source_identifier : urn})
 
+
 def parse_email_tag(email_line) -> dict:
     return helper_match_generic_label_and_types(email_line)
+
 
 def parse_geo_tag(geo_line) -> dict:
 
@@ -79,11 +88,13 @@ def parse_geo_tag(geo_line) -> dict:
 
     return dict({"latitude" : lat, "longitude": lon})
         
+
 def parse_instant_messenger_handle_tag(impp_line) -> dict:
 
     _, impp_type, impp_handle = impp_line.split(KEY_VALUE_SEPARATOR)
 
     return dict({"type": impp_type, "handle": impp_handle})
+
 
 def parse_mailing_label_tag(label_line) -> dict:
     return helper_match_generic_label_and_types(label_line)
@@ -97,16 +108,15 @@ def parse_member_tag(member_line) -> dict:
 
     return dict({ member_id_type : member_id_value })
 
+
 def parse_name_tag(name_line) -> tuple:
 
     name_line_split = name_line.split(TAG_FIELD_SEPARATOR)
 
     subname_key_types = ["family_name", "given_name", "additional_middle_names", "honorific_prefixes", "honorific_suffixes"]
 
-    # Don't include the subname if it's empty!
-    #return tuple([subname for subname in zip(subname_key_types, name_line_split) if subname[1] != ""])
-
     return helper_match_subkey_types_and_values(subname_key_types, name_line_split)
+
 
 def return_name_tag_formatted(name_tag_field : dict) -> str:
     """
@@ -125,6 +135,7 @@ def return_name_tag_formatted(name_tag_field : dict) -> str:
 
     return name
     
+
 def parse_organization_tag(organization_line) -> tuple:
     """
     Parses the ORGANIZATION line. It can either be simple, eg. just one value
@@ -142,11 +153,14 @@ def parse_organization_tag(organization_line) -> tuple:
 
         return helper_match_subkey_types_and_values(sub_org_key_types, organzation_line_split)
 
+
 def parse_related_tag(related_line) -> dict:
     return helper_match_generic_label_and_types(related_line)
 
+
 def parse_telephone_tag(telephone_textline) -> dict:
     return helper_match_generic_label_and_types(telephone_textline)
+
 
 def parse_uuid_tag(uuid_textline) -> dict:
 
@@ -154,6 +168,7 @@ def parse_uuid_tag(uuid_textline) -> dict:
     uid_type = uid_line_split[1]
     uid_data = KEY_VALUE_SEPARATOR.join(uid_line_split[2:])
     return dict({uid_type : uid_data })
+
 
 def parse_multimedia_tag(multimedia_tag_line) -> tuple:
     """
@@ -222,8 +237,9 @@ def parse_multimedia_tag(multimedia_tag_line) -> tuple:
     
     return helper_match_subkey_types_and_values(vcard_multimedia_helper.get_multimedia_tag_list(), [tag_type, tag_data, tag_url, tag_mime_type], contains_tag_name=False)
 
-
+## --------------
 ## Helper methods
+## --------------
 
 def helper_match_subkey_types_and_values(subkey_names : typing.List, values : typing.List, contains_tag_name = True) -> tuple:
     """
@@ -246,6 +262,7 @@ def helper_match_subkey_types_and_values(subkey_names : typing.List, values : ty
         result_dict.update({label_and_data_pairs[idx][0] : label_and_data_pairs[idx][1]})
 
     return result_dict
+
 
 def helper_match_generic_label_and_types(text_line) -> dict:
     """

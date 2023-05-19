@@ -1,8 +1,6 @@
-import typing
-import os
-import requests
-import pdb
 import base64
+import requests
+import typing
 
 # Multimedia key constants
 MULTIMEDIA_TAG_TAG_TYPE_KEY = "tag_type"

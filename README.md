@@ -52,7 +52,7 @@ will be either downloaded (if they're stored) as a URL, or otherwise decoded (fr
 ## Usage
 
 ```
-usage: sms_backup_extractor.py [-h] [-i INPUT_DIR] [-t BACKUP_TYPE] [-o OUTPUT_DIR]
+usage: backup_extractor.py [-h] [-i INPUT_DIR] [-t BACKUP_TYPE] [-o OUTPUT_DIR]
 
 options:
   -h, --help            show this help message and exit
