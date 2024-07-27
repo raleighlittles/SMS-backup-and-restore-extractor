@@ -8,15 +8,17 @@ The *SMS Backup & Restore* app on [Google Play](https://play.google.com/store/ap
 * your whole or partial call history
 * your Contacts ('Address book')
 
+They provided an online tool to let you view the content of these backups: https://www.synctech.com.au/sms-backup-restore/view-backup/ But that tool doesn't have an easy way to extract the data, which is where this repository comes in.
+
 I wrote a  Python script to extract data from those backups. Right now the script can:
 
 1. extract the images out of your sent/received MMS messages
 2. create a  de-duplicated call log out of your entire call history
-3.  :construction: (NEW) :construction: extract any saved images, media, or keys from a user's contact files. ie. you chose a custom photo for someone in your contacts, made a backup, and now you want that photo back
+3.  :construction: (NEW) :construction: extract any saved images, media, or keys from a user's contact files. ie. you chose a custom photo for someone in your contacts, made a backup, and now would like to retrieve that contact photo.
 
 # Details
 
-## Messages/Backup format
+## Messages & Calls: Backup format
 
 The app saves backups of your SMS messages, images included, in an xml file that looks like `sms-<timestamp>.xml`. The images that were stored as MMS messages are then encoded as [Base64](https://en.wikipedia.org/wiki/Base64).
 
@@ -26,7 +28,7 @@ Calls are also saved in XML files, named `calls-<timestamp>.xml`. This script cr
 
 ## V-Card/VCF parser
 
-This app also lets you backup your contacts to one large [VCF](https://en.wikipedia.org/wiki/VCard) file. There are 3 different standards for V-Card files, but thankfully this parser supports all 3: version 2.1, version 3, and version 4. 
+This app also lets you backup your contacts to one large [VCF](https://en.wikipedia.org/wiki/VCard) file. There are 3 different standards for V-Card files, but thankfully this parser supports all 3: version 2.1, version 3, and version 4.
 
 Any of the following Vcard tags:
 
@@ -92,3 +94,9 @@ The backups I had only contained image data, not audio or videos. I don't know i
 
 - [ ] Refactoring of the VCard/VCF parser
 - [ ] Add the ability to convert export messages to a CSV file
+
+### Contributing
+
+<a href="https://www.buymeacoffee.com/raleighlittles" target="_blank"><img src="https://cdn.buymeacoffee.com/buttons/default-orange.png" alt="Buy Me A Coffee" height="41" width="174"></a>
+
+I haven't used this backup application since 2016, so its possible some of the schema might've changed. If you encounter an issue please include the date your backup was generated.
