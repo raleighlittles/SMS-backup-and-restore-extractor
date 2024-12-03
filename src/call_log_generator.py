@@ -41,7 +41,8 @@ def create_call_log(calls_xml_dir) -> None:
     all_calls_list = []
 
     # https://developer.android.com/reference/android/provider/CallLog.Calls#TYPE
-    call_type_map = {"1": "Incoming", "2": "Outgoing", "3": "Missed"}
+    call_type_map = {"1": "Incoming", "2": "Outgoing", "3": "Missed",
+                     "4": "Voicemail", "5": "Rejected", "6": "Blocked", "7": "AnsweredExternally"}
 
     # Used to maintain uniqueness among calls, since multiple calls cannot happen at the same time
     call_timestamps = set()
