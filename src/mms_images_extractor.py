@@ -1,4 +1,5 @@
 import base64
+import datetime
 import hashlib
 import lxml.etree
 import os
@@ -8,7 +9,17 @@ import sys
 import time
 
 
+def get_datetime_from_epoch_milliseconds(epoch_milliseconds: str) -> str:
+    """
+    Converts the epoch time in milliseconds to a human-readable date and time string
+    """
+    return datetime.datetime.fromtimestamp(int(epoch_milliseconds) / 1000).strftime('%Y%m%d-%H%M%S')
+
+
 def reconstruct_sms_images(sms_xml_dir: dir, output_images_dir: str) -> None:
+
+    if not os.path.exists(output_images_dir):
+        os.makedirs(output_images_dir, exist_ok=False)
 
     start_time = time.time()
 
@@ -42,12 +53,18 @@ def reconstruct_sms_images(sms_xml_dir: dir, output_images_dir: str) -> None:
                     xpath_search_expr = xpath_search_str_base + ext + "']"
 
                     for b in root.findall(xpath_search_expr):
+
+                        image_date_field = b.getparent(
+                        ).getparent().attrib["date"]
+                        image_sender_phone_num_field = b.getparent(
+                        ).getparent().attrib["address"]
+
                         b64_results_list.append(
-                            [(b.attrib['data'], b.attrib['cl'], ext)])
+                            [(image_date_field, "".join(char for char in image_sender_phone_num_field if char.isdigit()), b.attrib['data'], b.attrib['cl'], ext)])
 
                 for result_type in b64_results_list:
 
-                    for (data, content_location, ext) in result_type:
+                    for (epoch_milliseconds, image_sender_phone_number, data, content_location, ext) in result_type:
 
                         # If it's empty, just assign it a random 10-letter string (so that it doesn't conflict with other unnamed files)
                         if content_location == "" or content_location == "null":
@@ -55,10 +72,10 @@ def reconstruct_sms_images(sms_xml_dir: dir, output_images_dir: str) -> None:
                                 string.ascii_letters, 10)) + "." + ext
 
                         # this ensures the filename has an extension, if it doesn't (likely) have one
-                        output_filename = (content_location if '.' in content_location else (
+                        output_filename = get_datetime_from_epoch_milliseconds(epoch_milliseconds) + "_" + image_sender_phone_num_field + "_" + (content_location if '.' in content_location else (
                             content_location + "." + ext))
 
-                        with open(os.path.join(output_images_dir, output_filename), 'wb') as extracted_mms_image:
+                        with open(os.path.join(output_images_dir, output_filename), mode="wb") as extracted_mms_image:
 
                             extracted_mms_image.write(base64.b64decode(data))
                             orig_files_count += 1

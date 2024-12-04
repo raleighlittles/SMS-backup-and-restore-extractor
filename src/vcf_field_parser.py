@@ -1,7 +1,7 @@
 import typing
 
 # locals
-import vcard_multimedia_helper
+from . import vcard_multimedia_helper
 
 TAG_FIELD_SEPARATOR = ";"
 KEY_VALUE_SEPARATOR = ":"

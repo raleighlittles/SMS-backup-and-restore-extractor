@@ -5,8 +5,8 @@ import src.call_log_generator
 import src.mms_images_extractor
 import src.contacts_vcard_extractor
 
-
 if __name__ == "__main__":
+
     argparse_parser = argparse.ArgumentParser()
 
     argparse_parser.add_argument("-i", "--input-dir", type=str, required=True,

@@ -4,8 +4,8 @@ import string
 import sys
 
 # local
-import vcf_field_parser
-import vcard_multimedia_helper
+from . import vcf_field_parser
+from . import vcard_multimedia_helper
 
 
 # v2.1 and v3.0 require the first, v4.0 requires the second.
