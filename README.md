@@ -81,7 +81,7 @@ Examples:
      backup_extractor.py -t sms -i input_dir -o output_dir
 
   To extract only Video files:
-     backup_extractor.py -t sms -i input_dir -o output_dir --no-images --no-audio --no-pdf
+     backup_extractor.py -t sms -i input_dir -o output_dir --no-images --no-audio --no-pdfs
 
   To extract a de-duplicated call log:
      backup_extractor.py -t calls -i input_dir -o output_dir
