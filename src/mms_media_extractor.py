@@ -110,7 +110,7 @@ def reconstruct_mms_media(sms_xml_dir: str, output_media_dir: str, process_image
                         # skip this audio file because we aren't extracting audio, or it's an unsupported audio subtype
                         continue
                     elif (ct_type == 'application' and (not process_pdf or ct_subtype not in APPLICATION_SUBTYPES)):
-                        # skip this audio file because we aren't extracting audio, or it's an unsupported application subtype
+                        # skip this PDF file because we aren't extracting PDF, or it's an unsupported application subtype
                         continue
 
                     # if we get here, then we have a image/video/audio attachment to process
