@@ -1,3 +1,5 @@
+# This module has been replaced by mms_media_extractor
+
 import base64
 import datetime
 import hashlib
