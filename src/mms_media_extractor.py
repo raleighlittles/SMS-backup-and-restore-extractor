@@ -70,6 +70,7 @@ def reconstruct_mms_media(sms_xml_dir: str, output_media_dir: str, process_image
 
     start_time = time.time()
     orig_files_count = 0
+    error_count = 0
 
     contentMsg = (f"Processing messages ({', '.join([x for cond, x in [
         (process_image, 'images'),
@@ -79,7 +80,7 @@ def reconstruct_mms_media(sms_xml_dir: str, output_media_dir: str, process_image
     ] if cond])})...")
 
     print(contentMsg, end="", flush=True)
-    for filename in os.listdir(sms_xml_dir):
+    for filename in sorted(os.listdir(sms_xml_dir)):
         if filename.endswith(".xml") and filename.startswith("sms"):
             file_path = os.path.join(sms_xml_dir, filename)
 
@@ -98,75 +99,99 @@ def reconstruct_mms_media(sms_xml_dir: str, output_media_dir: str, process_image
 
                     if not (ct_type in CONTENT_TYPES):
                         # not an image/video/audio/application file. Skip it
+                        elem.clear()
                         continue
 
                     if (ct_type == 'image' and (not process_image or ct_subtype not in IMAGE_SUBTYPES)):
                         # skip this image file because we aren't extracting images, or it's an unsupported image subtype
+                        elem.clear()
                         continue
                     elif (ct_type == 'video' and (not process_video or ct_subtype not in VIDEO_SUBTYPES)):
                         # skip this video file because we aren't extracting videos, or it's an unsupported video subtype
+                        elem.clear()
                         continue 
                     elif (ct_type == 'audio' and (not process_audio or ct_subtype not in AUDIO_SUBTYPES)):
                         # skip this audio file because we aren't extracting audio, or it's an unsupported audio subtype
+                        elem.clear()
                         continue
                     elif (ct_type == 'application' and (not process_pdf or ct_subtype not in APPLICATION_SUBTYPES)):
                         # skip this PDF file because we aren't extracting PDF, or it's an unsupported application subtype
+                        elem.clear()
                         continue
 
                     # if we get here, then we have a image/video/audio attachment to process
-                    parent_parts = elem.getparent()  # <parts>
-                    if parent_parts is not None:
+                    try:
+                        parent_parts = elem.getparent()  # <parts>
+                        if parent_parts is None:
+                            elem.clear()
+                            continue
                         mms_node = parent_parts.getparent()  # <mms>
-                        if mms_node is not None:
-                            media_date_field = mms_node.get('date', '')
-                            media_sender_field = mms_node.get('address', '')
+                        if mms_node is None:
+                            elem.clear()
+                            continue
 
-                            data = elem.get('data', '')
-                            content_location = elem.get('cl', '')
+                        media_date_field = mms_node.get('date', '')
+                        media_sender_field = mms_node.get('address', '')
 
-                            # Clean phone number
-                            clean_phone = "".join(
-                                c for c in media_sender_field if c.isdigit()
+                        data = elem.get('data', '')
+                        content_location = elem.get('cl', '')
+
+                        # Clean phone number
+                        clean_phone = "".join(
+                            c for c in media_sender_field if c.isdigit()
+                        )
+
+                        # If empty, give random name
+                        if not content_location or content_location == 'null':
+                            content_location = (
+                                "".join(random.sample(string.ascii_letters, 10))
+                                + f".{ct_subtype}"
                             )
 
-                            # If empty, give random name
-                            if not content_location or content_location == 'null':
-                                content_location = (
-                                    "".join(random.sample(string.ascii_letters, 10))
-                                    + f".{ct_subtype}"
-                                )
+                        # Build base filename
+                        base_name = (
+                            get_datetime_from_epoch_milliseconds(media_date_field)
+                            + f"_{clean_phone}_{content_location}"
+                        )
 
-                            # Build base filename
-                            base_name = (
-                                get_datetime_from_epoch_milliseconds(media_date_field)
-                                + f"_{clean_phone}_{content_location}"
-                            )
+                        # If there's no '.' in content_location, add the subtype as extension
+                        if '.' not in content_location:
+                            base_name += f".{ct_subtype}"
 
-                            # If there's no '.' in content_location, add the subtype as extension
-                            if '.' not in content_location:
-                                base_name += f".{ct_subtype}"
+                        # Now ensure it fits the filesystem limit
+                        target_filename = safe_filename(output_media_dir, base_name)
 
-                            # Now ensure it fits the filesystem limit
-                            target_filename = safe_filename(output_media_dir, base_name)
+                        # Messages with multiple attachments could have the same name.
+                        # Create a unique output_file_path using the target_filename
+                        output_file_path = handle_duplicate_name(output_media_dir, target_filename)
 
-                            # Messages with multiple attachments could have the same name.
-                            # Create a unique output_file_path using the target_filename
-                            output_file_path = handle_duplicate_name(output_media_dir, target_filename)
+                        # Write decoded data
+                        with open(output_file_path, 'wb') as out_f:
+                            out_f.write(base64.b64decode(data))
+                            orig_files_count += 1
 
-                            # Write decoded data
-                            try:
-                                with open(output_file_path, 'wb') as out_f:
-                                    out_f.write(base64.b64decode(data))
-                                    orig_files_count += 1
-                            except Exception as e:
-                                print(f"ERROR writing file {output_file_path}: {e}")
+                    except Exception as e:
+                        error_count += 1
+                        print(
+                            f"\nWARNING: Failed to extract media in file '{filename}' "
+                            f"(mms date='{media_date_field}', address='{media_sender_field}', "
+                            f"content_location='{content_location}'): {e}"
+                        )
 
-                # Free memory by clearing processed element
-                elem.clear()
-                # Option A: remove from parent
+                    # Free memory for the processed <part> element
+                    elem.clear()
+
+                else:
+                    # Clear any non-<part> elements after their 'end' event to
+                    # avoid unbounded memory growth when parsing large XML files.
+                    elem.clear()
+
+                # Drop already-processed previous siblings from the parent
+                # to keep the in-memory tree small during iterparse.
                 parent = elem.getparent()
                 if parent is not None:
-                    parent.remove(elem)
+                    while elem.getprevious() is not None:
+                        del parent[0]
 
             # Done parsing this file
             del context
@@ -179,8 +204,9 @@ def reconstruct_mms_media(sms_xml_dir: str, output_media_dir: str, process_image
     end_time = time.time()
 
     print(f"{orig_files_count} media files found in messages, "
-          f"{num_dup_files} duplicates(or empty files) removed. Time elapsed: "
-          f"{round(end_time - start_time, 2)} seconds")
+          f"{num_dup_files} duplicates (or empty files) removed, "
+          f"{error_count} errors. "
+          f"Time elapsed: {round(end_time - start_time, 2)} seconds")
 
 
 def remove_duplicate_files(output_media_dir: str) -> int:
@@ -188,7 +214,7 @@ def remove_duplicate_files(output_media_dir: str) -> int:
     unique_hashes = set()
     
     print("Removing duplicates...", end="", flush=True)
-    for filename in os.listdir(output_media_dir):
+    for filename in sorted(os.listdir(output_media_dir)):
         file_path = os.path.join(output_media_dir, filename)
         if os.path.isfile(file_path):
             with open(file_path, 'rb') as f:
